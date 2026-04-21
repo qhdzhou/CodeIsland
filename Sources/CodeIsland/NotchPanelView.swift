@@ -278,6 +278,25 @@ struct NotchPanelView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .animation(NotchAnimation.open, value: appState.surface)
+        .overlay(alignment: .top) {
+            if let toast = appState.buddyToastText {
+                Text(toast)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 6)
+                    .background(
+                        Capsule().fill(Color.black.opacity(0.85))
+                    )
+                    .overlay(
+                        Capsule().stroke(Color.teal.opacity(0.6), lineWidth: 1)
+                    )
+                    .padding(.top, notchHeight + 4)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .zIndex(999)
+            }
+        }
+        .animation(.spring(response: 0.35, dampingFraction: 0.75), value: appState.buddyToastText)
     }
 }
 

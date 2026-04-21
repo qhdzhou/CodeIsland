@@ -1682,11 +1682,29 @@ final class AppState {
 
     /// Fire-and-forget: buddy button presses do not drive decisions.
     /// CodeIsland's own non-blocking PermissionRequest path already resolves
-    /// those; this is purely acknowledgement. Phase 2 will surface a real
-    /// toast in the notch — for now we log so the plumbing is observable.
+    /// those; this is purely acknowledgement. We pop a 2 s toast in the notch
+    /// and auto-dismiss.
     private func handleBuddyButton(decision: String) {
         log.info("buddy button: \(decision, privacy: .public)")
+        let label: String
+        switch decision.lowercased() {
+        case "once", "always", "allow", "approve": label = "Buddy approved ✓"
+        case "deny", "reject":                      label = "Buddy denied ✗"
+        default:                                    label = "Buddy: \(decision)"
+        }
+        buddyToastText = label
+        buddyToastTask?.cancel()
+        buddyToastTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            guard let self, !Task.isCancelled else { return }
+            self.buddyToastText = nil
+        }
     }
+
+    /// Transient banner text — set when the hardware buddy emits a button
+    /// event, cleared ~2 s later. Views observe this to render the toast.
+    var buddyToastText: String?
+    private var buddyToastTask: Task<Void, Never>?
 
     /// FSEventStream on known session-store roots — fires when transcript/event files change.
     private func startProjectsWatcher() {
