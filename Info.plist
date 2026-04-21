@@ -27,5 +27,7 @@
 	</dict>
 	<key>NSAppleEventsUsageDescription</key>
 	<string>CodeIsland needs to control terminal apps to jump to the correct window and tab when you click a session.</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>CodeIsland uses Bluetooth to connect to a hardware companion (Claude Desktop Buddy) and mirror your agent's status on it.</string>
 </dict>
 </plist>

@@ -13,6 +13,7 @@ enum SettingsPage: String, Identifiable, Hashable {
     case shortcuts
     case remote
     case hooks
+    case buddy
     case about
 
     var id: String { rawValue }
@@ -27,6 +28,7 @@ enum SettingsPage: String, Identifiable, Hashable {
         case .shortcuts: return "command.circle.fill"
         case .remote: return "network"
         case .hooks: return "link.circle.fill"
+        case .buddy: return "dot.radiowaves.left.and.right"
         case .about: return "info.circle.fill"
         }
     }
@@ -41,6 +43,7 @@ enum SettingsPage: String, Identifiable, Hashable {
         case .shortcuts: return .indigo
         case .remote: return .mint
         case .hooks: return .purple
+        case .buddy: return .teal
         case .about: return .cyan
         }
     }
@@ -53,7 +56,7 @@ private struct SidebarGroup: Hashable {
 
 private let sidebarGroups: [SidebarGroup] = [
     SidebarGroup(title: nil, pages: [.general, .behavior, .appearance, .mascots, .sound, .shortcuts]),
-    SidebarGroup(title: "CodeIsland", pages: [.remote, .hooks, .about]),
+    SidebarGroup(title: "CodeIsland", pages: [.remote, .hooks, .buddy, .about]),
 ]
 
 // MARK: - Main View
@@ -91,6 +94,7 @@ struct SettingsView: View {
                 case .shortcuts: ShortcutsPage()
                 case .remote: RemoteHostsPage()
                 case .hooks: HooksPage()
+                case .buddy: BuddyPage()
                 case .about: AboutPage()
                 }
             }
@@ -1639,5 +1643,64 @@ private struct ShortcutRow: View {
             }
         }
         .contentShape(Rectangle())
+    }
+}
+
+// MARK: - Buddy Page
+
+private struct BuddyPage: View {
+    @ObservedObject private var l10n = L10n.shared
+    @AppStorage(SettingsKey.buddyEnabled) private var buddyEnabled = SettingsDefaults.buddyEnabled
+    @State private var controller = BuddyBLEController.shared
+
+    var body: some View {
+        Form {
+            Section("Hardware Buddy") {
+                Toggle("Enable", isOn: Binding(
+                    get: { buddyEnabled },
+                    set: { newValue in
+                        buddyEnabled = newValue
+                        controller.setEnabled(newValue)
+                    }
+                ))
+
+                HStack {
+                    Text("Status")
+                    Spacer()
+                    statusBadge
+                }
+                if let name = controller.deviceName {
+                    HStack {
+                        Text("Device")
+                        Spacer()
+                        Text(name).foregroundStyle(.secondary)
+                    }
+                }
+            }
+
+            Section {
+                Text("""
+Mirrors the agent state onto a Bluetooth companion device (claude-desktop-buddy firmware). 
+First connection on this Mac reuses whatever pairing Claude Desktop already has; otherwise macOS shows a passkey prompt once.
+
+Only one central can hold the BLE link at a time — so Claude Desktop must be closed while this is enabled, or connect will fail.
+""")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    @ViewBuilder
+    private var statusBadge: some View {
+        switch controller.state {
+        case .disabled:       Text("off").foregroundStyle(.secondary)
+        case .poweringOn:     Text("powering on…").foregroundStyle(.secondary)
+        case .scanning:       Text("scanning…").foregroundStyle(.orange)
+        case .connecting:     Text("connecting…").foregroundStyle(.orange)
+        case .connected:      Text("connected").foregroundStyle(.green)
+        case .failed(let msg): Text(msg).foregroundStyle(.red)
+        }
     }
 }

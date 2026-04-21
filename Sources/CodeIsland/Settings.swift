@@ -70,6 +70,8 @@ enum SettingsKey {
     // Island collapsed width scale for non-notch screens (percentage: 50–150, default 100)
     static let collapsedWidthScale = "collapsedWidthScale"
 
+    // Hardware buddy (BLE companion device)
+    static let buddyEnabled = "buddyEnabled"
 }
 
 struct SettingsDefaults {
@@ -108,6 +110,8 @@ struct SettingsDefaults {
     static let showToolStatus = true
 
     static let collapsedWidthScale = 100  // percentage
+
+    static let buddyEnabled = false
 }
 
 @MainActor
@@ -228,6 +232,11 @@ class SettingsManager {
     var sessionGroupingMode: String {
         get { defaults.string(forKey: SettingsKey.sessionGroupingMode) ?? SettingsDefaults.sessionGroupingMode }
         set { defaults.set(newValue, forKey: SettingsKey.sessionGroupingMode) }
+    }
+
+    var buddyEnabled: Bool {
+        get { defaults.bool(forKey: SettingsKey.buddyEnabled) }
+        set { defaults.set(newValue, forKey: SettingsKey.buddyEnabled) }
     }
 }
 

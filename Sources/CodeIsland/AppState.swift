@@ -679,6 +679,15 @@ final class AppState {
         if primarySource != summary.primarySource { primarySource = summary.primarySource }
         if activeSessionCount != summary.activeSessionCount { activeSessionCount = summary.activeSessionCount }
         if totalSessionCount != summary.totalSessionCount { totalSessionCount = summary.totalSessionCount }
+
+        // Mirror the aggregate state to the hardware buddy. The controller
+        // deduplicates identical payloads, so calling this after every mutation
+        // is cheap.
+        BuddyBLEController.shared.publish(
+            status: status,
+            activeSessionCount: activeSessionCount,
+            toolName: currentTool
+        )
     }
 
     private func refreshProviderTitle(for trackedSessionId: String, providerSessionId: String? = nil) {
@@ -1661,6 +1670,22 @@ final class AppState {
         requestDiscoveryScan()
         // Watch all known session-store roots so discovery keeps working when hooks are missed.
         startProjectsWatcher()
+
+        // Bring up the BLE buddy bridge if the user enabled it. Route button
+        // presses through our non-blocking toast path — buddy never gates a
+        // permission decision, it only mirrors/acknowledges them.
+        BuddyBLEController.shared.onButtonEvent = { [weak self] decision in
+            self?.handleBuddyButton(decision: decision)
+        }
+        BuddyBLEController.shared.setEnabled(SettingsManager.shared.buddyEnabled)
+    }
+
+    /// Fire-and-forget: buddy button presses do not drive decisions.
+    /// CodeIsland's own non-blocking PermissionRequest path already resolves
+    /// those; this is purely acknowledgement. Phase 2 will surface a real
+    /// toast in the notch — for now we log so the plumbing is observable.
+    private func handleBuddyButton(decision: String) {
+        log.info("buddy button: \(decision, privacy: .public)")
     }
 
     /// FSEventStream on known session-store roots — fires when transcript/event files change.
