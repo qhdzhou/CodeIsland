@@ -239,7 +239,7 @@ let eventName = json["hook_event_name"] as? String ?? ""
 let isPermission = eventName == "PermissionRequest"
 let isQuestion = (eventName == "Notification" || eventName == "afterAgentThought")
     && json["question"] as? String != nil
-let isBlocking = isPermission || isQuestion
+let isBlocking = isQuestion  // PermissionRequest → non-blocking notification only
 
 debugLog("event=\(eventName) session=\(sessionId) permission=\(isPermission) question=\(isQuestion)")
 
